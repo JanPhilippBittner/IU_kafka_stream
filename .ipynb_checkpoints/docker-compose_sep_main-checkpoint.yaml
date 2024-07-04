@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+    kafka_b:
+        image: docker.io/bitnami/kafka:3.4
+        hostname: kafka_b
+        ports:
+            - 9092:9092
+            - 9094:9094
+        environment:
+            - KAFKA_ENABLE_KRAFT=yes
+            - KAFKA_CFG_PROCESS_ROLES=broker,controller
+            - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+            - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+            - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+            - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092,EXTERNAL://kafka_b:9094
+            - KAFKA_BROKER_ID=1
+            - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9093
+            - ALLOW_PLAINTEXT_LISTENER=yes
+            - KAFKA_CFG_NODE_ID=1
+            - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+            - BITNAMI_DEBUG=yes
+            - KAFKA_CFG_NUM_PARTITIONS=2
+        container_name: kafka
+        networks:
+            - weather_pipe
+
+    mongo:
+        image: mongo
+        ports:
+            - 27017:27017
+        container_name: mongo
+        networks:
+            - weather_pipe
+    
+    monog-express:
+        image: mongo-express
+        ports:
+            - 8081:8081
+        environment:
+            - ME_CONFIG_MONGODB_SERVER=mongo
+        depends_on:
+            - kafka_b
+            - mongo
+        container_name: mongo-express
+        networks:
+            - weather_pipe
+
+networks:
+  weather_pipe:
+    driver: bridge
